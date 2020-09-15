@@ -25,3 +25,5 @@ do
     ./template_$L/run.sh --id $pn --hosts ./hosts --barrier localhost:11000 --output ./outputs/$pn.out $CONFIG_FILE &
 done
 
+wait
+[[ -n $(jobs) ]] && kill $(jobs -p)
