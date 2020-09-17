@@ -2,6 +2,12 @@ package cs451.channel;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.List;
 
 /**
  * ChannelUtils
@@ -10,6 +16,32 @@ public class ChannelUtils {
 
     public static ByteWriter writer() {
         return new ByteWriter();
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public static <T> T stack(Class<T> first, Object... objects) {
+        final var args = new ArrayDeque<>();
+
+        for (int i = objects.length - 1; i >= 0; i--) {
+            if (objects[i].getClass() == Class.class) {
+                Class clazz = (Class) objects[i];
+                try {
+                    Object inst = clazz.getConstructors()[0].newInstance(args.toArray());
+                    args.clear();
+                    args.addFirst(inst);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                args.addFirst(objects[i]);
+            }
+        }
+
+        try {
+            return (T) first.getConstructors()[0].newInstance(args.toArray());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static ByteReader reader(byte[] data) {
