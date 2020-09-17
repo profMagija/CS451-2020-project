@@ -2,69 +2,70 @@ package cs451;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import cs451.channel.Channel;
 import cs451.channel.ChannelUtils;
 import cs451.channel.RetransmitChannel;
 import cs451.channel.UdpHost;
+import cs451.channel.UniformReliableBroadcast;
 
 /**
  * Implementation
  */
 public class Implementation {
 
-    Host me;
-    List<Host> peers;
-    int packets;
+    private Host me;
+    private int[][] config;
 
     UdpHost host;
     Writer output;
 
-    List<Channel> channels = new ArrayList<>();
+    Channel channel;
 
-    public void init(Host me, List<Host> peers, int packets, Writer output) {
+    public void init(final Host me, List<Host> peers, Writer output, int[][] config) {
         this.me = me;
-        this.peers = peers;
-        this.packets = packets;
         this.output = output;
+        this.config = config;
 
         host = new UdpHost(me);
 
-        for (Host peer : peers) {
-            Channel c = new RetransmitChannel(host.channel(peer));
+        channel = new UniformReliableBroadcast(me.getId(),
+                peers.stream().map(p -> new Pair<>(p.getId(), (Channel) new RetransmitChannel(host.channel(p))))
+                        .collect(Collectors.toList()));
 
-            channels.add(c);
+        channel.onReceive(data -> {
+            var br = ChannelUtils.reader(data);
+            var peer = br.readInt();
+            var seqNum = br.readInt();
 
-            c.onReceive(d -> {
+            synchronized (output) {
                 try {
-                    output.append("d " + peer.getId() + " " + d[0] + "\n");
-                } catch (Exception e) {
-                    // TODO: handle exception
+                    output.append("d " + peer + " " + seqNum + "\n");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            });
-        }
+            }
+        });
     }
 
     public void run() throws Exception {
 
-        for (int i = 1; i <= this.packets; i++) {
-            for (Channel channel : channels) {
-                synchronized (output) {
-                    output.append("b" + i + "\n");
-                }
-                channel.send(new byte[] { (byte) i });
+        final int packets = this.config[0][0];
+
+        for (int i = 1; i <= packets; i++) {
+            synchronized (output) {
+                output.append("b " + i + "\n");
             }
+            channel.send(ChannelUtils.writer().writeInt(me.getId()).writeInt(i).done());
         }
+
+        Thread.sleep(1000);
 
         System.out.println("cleaning up");
 
-        for (Channel channel : channels) {
-            channel.cleanup();
-        }
-
+        channel.cleanup();
         host.cleanup();
-
     }
 }

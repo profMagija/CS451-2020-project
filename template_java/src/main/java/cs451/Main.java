@@ -1,7 +1,11 @@
 package cs451;
 
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class Main {
@@ -17,7 +21,7 @@ public class Main {
 
         try {
             output.close();
-        } catch (IOException e) {
+        } catch (final IOException e) {
             e.printStackTrace();
         }
 
@@ -39,48 +43,46 @@ public class Main {
 
         initSignalHandlers();
 
-        // example
-        long pid = ProcessHandle.current().pid();
-        System.out.println("My PID is " + pid + ".");
-        System.out
-                .println("Use 'kill -SIGINT " + pid + " ' or 'kill -SIGTERM " + pid + " ' to stop processing packets.");
-
-        System.out.println("My id is " + parser.myId() + ".");
-        System.out.println("List of hosts is:");
-        for (Host host : parser.hosts()) {
-            System.out.println(host.getId() + ", " + host.getIp() + ", " + host.getPort());
-        }
-
-        System.out.println("Barrier: " + parser.barrierIp() + ":" + parser.barrierPort());
-        System.out.println("Signal: " + parser.signalIp() + ":" + parser.signalPort());
-        System.out.println("Output: " + parser.output());
-        // if config is defined; always check before parser.config()
-        if (parser.hasConfig()) {
-            System.out.println("Config: " + parser.config());
-        }
-
-        Coordinator coordinator = new Coordinator(parser.myId(), parser.barrierIp(), parser.barrierPort(),
-                parser.signalIp(), parser.signalPort());
-
-        Implementation impl = new Implementation();
+        final Implementation impl = new Implementation();
 
         try {
             output = new FileWriter(parser.output());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
+        List<String> cfgLines;
+        try {
+            cfgLines = Files.readAllLines(Paths.get(parser.config()));
+        } catch (IOException e1) {
+            throw new RuntimeException(e1);
+        }
+        final var configNumbers = new int[cfgLines.size()][];
+
+        for (int i = 0; i < cfgLines.size(); i++) {
+            final var parts = cfgLines.get(i).split("\\s+");
+            configNumbers[i] = new int[parts.length];
+            for (int j = 0; j < parts.length; j++) {
+                configNumbers[i][j] = Integer.parseInt(parts[j]);
+            }
+        }
+
         impl.init(parser.hosts().stream().filter(x -> x.getId() == parser.myId()).findAny().get(),
-                parser.hosts().stream().filter(x -> x.getId() != parser.myId()).collect(Collectors.toList()), 10,
-                output);
+                parser.hosts().stream().filter(x -> x.getId() != parser.myId()).collect(Collectors.toList()), output,
+                configNumbers);
 
         System.out.println("Waiting for all processes for finish initialization");
         coordinator.waitOnBarrier();
 
         System.out.println("Broadcasting messages...");
 
-        impl.run();
+        try {
+            impl.run();
+        } catch (final Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
         System.out.println("Signaling end of broadcasting messages");
         coordinator.finishedBroadcasting();

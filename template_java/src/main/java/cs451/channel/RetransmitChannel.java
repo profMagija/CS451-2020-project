@@ -39,7 +39,7 @@ public class RetransmitChannel extends Channel {
                 }
             } else if (seqNum > recvSeqNum && !recvPackets.containsKey(seqNum)) {
                 // this is a future packet, add it to map
-                System.out.printf(" [rtx] got %d, but expecting %d\n", seqNum, recvSeqNum);
+                // System.out.printf(" [rtx] got %d, but expecting %d\n", seqNum, recvSeqNum);
                 sendAck(PACKET_TYPE_RTX_REQ, recvSeqNum); // request the one we are waiting for
                 recvPackets.put(seqNum, new Packet(seqNum, payload));
             }

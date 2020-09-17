@@ -7,7 +7,8 @@ import shutil
 import os
 
 NUM_PROC = int(sys.argv[1])
-CONFIG_FILE = sys.argv[2]
+TARGET_TYPE = sys.argv[2]
+NUM_PKT = int(sys.argv[3])
 LANG = "java"
 
 subprocess.run([f"./template_{LANG}/build.sh"], check=True)
@@ -25,8 +26,33 @@ with open("./hosts", "w") as hosts:
 
 procs = []
 
-# p=subprocess.Popen(your_command, preexec_fn=os.setsid)
-# os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+validator = None
+
+
+def fifo_validator(name):
+    expect = [1 for _ in range(NUM_PROC)]
+    with open(name) as f:
+        for line in f:
+            parts = line.split()
+            if parts[0] == 'd':
+                sender = int(parts[1])
+                seqnum = int(parts[2])
+
+                if expect[sender - 1] == seqnum:
+                    expect[sender - 1] += 1
+                else:
+                    yield f'{sender}:{seqnum} delivered before {sender}:{expect[sender - 1]}'
+    for i, ex in enumerate(expect):
+        if ex != NUM_PKT + 1:
+            yield f'{i+1}:{ex} not delivered!'
+
+
+if TARGET_TYPE == 'fifo':
+    with open('./config', 'w') as conf_file:
+        print(NUM_PKT, file=conf_file)
+    validator = fifo_validator
+else:
+    print(' ?? wot')
 
 for pn in range(1, NUM_PROC + 1):
     proc = subprocess.Popen([
@@ -36,7 +62,7 @@ for pn in range(1, NUM_PROC + 1):
         "--hosts", "./hosts",
         "--barrier", "localhost:11000",
         "--output", f"./outputs/{pn}.out",
-        CONFIG_FILE
+        "./config"
     ], shell=False)
     procs.append(proc)
 
@@ -52,3 +78,13 @@ for proc in procs:
         proc.kill()
     except:
         pass
+
+all_ok = True
+
+for pn in range(1, NUM_PROC):
+    for judgement in validator(f'./outputs/{pn}.out'):
+        print(' !! oh noz [', pn, ']:', judgement)
+        all_ok = False
+
+if all_ok:
+    print(' *** all ok ***')
