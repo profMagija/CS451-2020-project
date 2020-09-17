@@ -1,5 +1,7 @@
 package cs451;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,13 +20,15 @@ public class Implementation {
     int packets;
 
     UdpHost host;
+    Writer output;
 
     List<Channel> channels = new ArrayList<>();
 
-    public void init(Host me, List<Host> peers, int packets) {
+    public void init(Host me, List<Host> peers, int packets, Writer output) {
         this.me = me;
         this.peers = peers;
         this.packets = packets;
+        this.output = output;
 
         host = new UdpHost(me);
 
@@ -33,15 +37,23 @@ public class Implementation {
 
             channels.add(c);
 
-            c.onReceive(d -> System.out.println(peer.getId() + " : " + ChannelUtils.toStr(d)));
+            c.onReceive(d -> {
+                try {
+                    output.append("d " + peer.getId() + " " + d[0] + "\n");
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
+            });
         }
     }
 
-    public void run() {
+    public void run() throws Exception {
 
         for (int i = 1; i <= this.packets; i++) {
             for (Channel channel : channels) {
-                System.out.println("sending " + i);
+                synchronized (output) {
+                    output.append("b" + i + "\n");
+                }
                 channel.send(new byte[] { (byte) i });
             }
         }

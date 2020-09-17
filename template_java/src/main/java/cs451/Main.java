@@ -1,8 +1,12 @@
 package cs451;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.stream.Collectors;
 
 public class Main {
+
+    private static FileWriter output;
 
     private static void handleSignal() {
         // immediately stop network packet processing
@@ -10,6 +14,12 @@ public class Main {
 
         // write/flush output file if necessary
         System.out.println("Writing output.");
+
+        try {
+            output.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         Runtime.getRuntime().halt(0);
     }
@@ -54,8 +64,16 @@ public class Main {
 
         Implementation impl = new Implementation();
 
+        try {
+            output = new FileWriter(parser.output());
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
         impl.init(parser.hosts().stream().filter(x -> x.getId() == parser.myId()).findAny().get(),
-                parser.hosts().stream().filter(x -> x.getId() != parser.myId()).collect(Collectors.toList()), 10);
+                parser.hosts().stream().filter(x -> x.getId() != parser.myId()).collect(Collectors.toList()), 10,
+                output);
 
         System.out.println("Waiting for all processes for finish initialization");
         coordinator.waitOnBarrier();
