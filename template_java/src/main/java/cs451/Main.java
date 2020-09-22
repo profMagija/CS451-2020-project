@@ -68,6 +68,9 @@ public class Main {
             }
         }
 
+        Coordinator coordinator = new Coordinator(parser.myId(), parser.barrierIp(), parser.barrierPort(),
+                parser.signalIp(), parser.signalPort());
+
         impl.init(parser.hosts().stream().filter(x -> x.getId() == parser.myId()).findAny().get(),
                 parser.hosts().stream().filter(x -> x.getId() != parser.myId()).collect(Collectors.toList()), output,
                 configNumbers);
