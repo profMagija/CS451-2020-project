@@ -43,8 +43,6 @@ public class Main {
 
         initSignalHandlers();
 
-        final Implementation impl = new Implementation();
-
         try {
             output = new FileWriter(parser.output());
         } catch (final IOException e) {
@@ -70,6 +68,16 @@ public class Main {
 
         Coordinator coordinator = new Coordinator(parser.myId(), parser.barrierIp(), parser.barrierPort(),
                 parser.signalIp(), parser.signalPort());
+
+        Implementation impl;
+
+        if (configNumbers.length == 1) {
+            // this is a FIFO thing
+            impl = new ImplementationFifo();
+        } else {
+            // this is a local causal thing
+            impl = new ImplementationLc();
+        }
 
         impl.init(parser.hosts().stream().filter(x -> x.getId() == parser.myId()).findAny().get(),
                 parser.hosts().stream().filter(x -> x.getId() != parser.myId()).collect(Collectors.toList()), output,

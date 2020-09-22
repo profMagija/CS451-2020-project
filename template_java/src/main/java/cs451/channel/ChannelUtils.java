@@ -110,7 +110,8 @@ public class ChannelUtils {
         }
 
         public int readInt() {
-            return (data[loc++] << 24) | (data[loc++] << 16) | (data[loc++] << 8) | (data[loc++]);
+            return ((data[loc++] & 0xff) << 24) | ((data[loc++] & 0xff) << 16) | ((data[loc++] & 0xff) << 8)
+                    | (data[loc++] & 0xff);
         }
 
         public byte[] readEnd() {
