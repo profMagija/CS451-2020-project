@@ -9,6 +9,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
 
+import cs451.channel.BestEffortBroadcast;
 import cs451.channel.Channel;
 import cs451.channel.ChannelUtils;
 import cs451.channel.LocalOrderChannel;
@@ -40,18 +41,17 @@ public class ImplementationLc implements Implementation {
 
         host = new UdpHost(me);
 
-        // channel = new LocalOrderChannel(new UniformReliableBroadcast(me.getId(),
-        // peers.stream().map(p -> new Pair<>(p.getId(), (Channel) new
-        // RetransmitChannel(host.channel(p))))
-        // .collect(Collectors.toList())));
+        var peerChans = peers.stream()//
+                .map(p -> new Pair<Integer, Channel>(//
+                        p.getId(), //
+                        new RetransmitChannel(host.channel(p), true)))
+                .collect(Collectors.toList());
+
         channel = ChannelUtils.stack(//
                 LocalOrderChannel.class, //
                 // LoggerChannel.class, me.getId(), //
-                UniformReliableBroadcast.class, me.getId(), peers.stream()//
-                        .map(p -> new Pair<Integer, Channel>(//
-                                p.getId(), //
-                                new RetransmitChannel(host.channel(p))))
-                        .collect(Collectors.toList()));
+                // UniformReliableBroadcast.class, me.getId(), peers.size() + 1,
+                BestEffortBroadcast.class, me.getId(), peerChans);
 
         depMsgs = new BlockingQueue[peers.size() + 1];
 

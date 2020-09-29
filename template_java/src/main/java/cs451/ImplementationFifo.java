@@ -5,6 +5,7 @@ import java.io.Writer;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import cs451.channel.BestEffortBroadcast;
 import cs451.channel.Channel;
 import cs451.channel.ChannelUtils;
 import cs451.channel.RetransmitChannel;
@@ -31,16 +32,15 @@ public class ImplementationFifo implements Implementation {
 
         host = new UdpHost(me);
 
-        // channel = new LocalOrderChannel(new UniformReliableBroadcast(me.getId(),
-        // peers.stream().map(p -> new Pair<>(p.getId(), (Channel) new
-        // RetransmitChannel(host.channel(p))))
-        // .collect(Collectors.toList())));
+        var peerChannels = peers.stream()//
+                .map(p -> new Pair<Integer, Channel>(//
+                        p.getId(), //
+                        new RetransmitChannel(host.channel(p), true)))
+                .collect(Collectors.toList());
+
         channel = ChannelUtils.stack(//
-                UniformReliableBroadcast.class, me.getId(), peers.stream()//
-                        .map(p -> new Pair<Integer, Channel>(//
-                                p.getId(), //
-                                new RetransmitChannel(host.channel(p))))
-                        .collect(Collectors.toList()));
+                UniformReliableBroadcast.class, me.getId(), peers.size() + 1, //
+                BestEffortBroadcast.class, me.getId(), peerChannels);
 
         channel.onReceive(data -> {
             var br = ChannelUtils.reader(data);

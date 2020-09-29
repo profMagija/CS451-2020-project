@@ -29,7 +29,7 @@ public class UniformReliableBroadcast extends Channel {
     public UniformReliableBroadcast(final int myId, final int numProc, final Channel beb) {
         this.myId = myId;
         this.beb = beb;
-        this.fd = new FailureDetector(myId, this::sendPing, this::onCrash)
+        this.fd = new FailureDetector(myId, this::sendPing, this::onCrash);
 
         for (int i = 0; i < numProc; i++) {
             correct.add(i + 1);

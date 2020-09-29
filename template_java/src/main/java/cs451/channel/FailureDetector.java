@@ -72,6 +72,10 @@ public class FailureDetector implements Closeable {
 
     public void cleanup() throws IOException {
         this.pingThread.interrupt();
-        this.pingThread.join();
+        try {
+            this.pingThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
