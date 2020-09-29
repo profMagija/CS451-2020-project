@@ -2,17 +2,11 @@ package cs451;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
 
 import cs451.channel.Channel;
 import cs451.channel.ChannelUtils;
-import cs451.channel.LocalOrderChannel;
-import cs451.channel.LoggerChannel;
 import cs451.channel.RetransmitChannel;
 import cs451.channel.UdpHost;
 import cs451.channel.UniformReliableBroadcast;

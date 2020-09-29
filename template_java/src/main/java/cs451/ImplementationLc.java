@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 import cs451.channel.Channel;
 import cs451.channel.ChannelUtils;
 import cs451.channel.LocalOrderChannel;
-import cs451.channel.LoggerChannel;
 import cs451.channel.RetransmitChannel;
 import cs451.channel.UdpHost;
 import cs451.channel.UniformReliableBroadcast;

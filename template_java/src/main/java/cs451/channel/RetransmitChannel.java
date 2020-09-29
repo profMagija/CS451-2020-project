@@ -9,9 +9,10 @@ import java.util.Map;
  */
 public class RetransmitChannel extends Channel {
 
-    public RetransmitChannel(Channel chan) {
+    public RetransmitChannel(Channel chan, boolean allowOoo) {
         this.chan = chan;
         this.chan.onReceive(this::doReceive);
+        this.allowOoo = allowOoo;
 
         rtxThread = new Thread(this::retransmitLoop, "Retransmit thread");
         // rtxThread.setDaemon(true);
@@ -35,13 +36,18 @@ public class RetransmitChannel extends Channel {
                 while (recvPackets.containsKey(recvSeqNum)) {
                     Packet deliverable = recvPackets.remove(recvSeqNum);
                     recvSeqNum++;
-                    deliver(deliverable.data);
+                    if (!allowOoo) {
+                        deliver(deliverable.data);
+                    }
                 }
             } else if (seqNum > recvSeqNum && !recvPackets.containsKey(seqNum)) {
                 // this is a future packet, add it to map
                 // System.out.printf(" [rtx] got %d, but expecting %d\n", seqNum, recvSeqNum);
                 sendAck(PACKET_TYPE_RTX_REQ, recvSeqNum); // request the one we are waiting for
-                recvPackets.put(seqNum, new Packet(seqNum, payload));
+                if (allowOoo) {
+                    deliver(payload);
+                }
+                recvPackets.put(seqNum, new Packet(seqNum, allowOoo ? null : payload));
             }
         } else if (type == PACKET_TYPE_ACK) {
             // a packet is acknowledged, remove it from backlog
@@ -94,6 +100,7 @@ public class RetransmitChannel extends Channel {
     Channel chan;
     int sequenceNumber = 0;
     int recvSeqNum = 0;
+    boolean allowOoo;
 
     Map<Integer, Packet> sentPackets = new HashMap<>();
     Map<Integer, Packet> recvPackets = new HashMap<>();

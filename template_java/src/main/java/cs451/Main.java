@@ -1,6 +1,5 @@
 package cs451;
 
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,7 +45,6 @@ public class Main {
         try {
             output = new FileWriter(parser.output());
         } catch (final IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
