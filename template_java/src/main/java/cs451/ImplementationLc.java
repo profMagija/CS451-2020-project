@@ -86,6 +86,8 @@ public class ImplementationLc implements Implementation {
                 }
             }
         });
+
+        host.startHost();
     }
 
     public void run() throws Exception {
@@ -106,5 +108,7 @@ public class ImplementationLc implements Implementation {
             }
             channel.sendDependent(ChannelUtils.writer().writeInt(me.getId()).writeInt(i).done(), deps);
         }
+
+        channel.cleanup();
     }
 }

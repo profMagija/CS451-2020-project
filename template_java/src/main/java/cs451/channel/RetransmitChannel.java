@@ -115,10 +115,10 @@ public class RetransmitChannel extends Channel {
     volatile boolean running = true;
 
     private void retransmitLoop() {
-        while (running || !sentPackets.isEmpty()) {
-            if (!running) {
-                System.out.println("remaining " + sentPackets.size() + " packets");
-            }
+        while (running) {
+            // if (!running) {
+            // System.out.println("remaining " + sentPackets.size() + " packets");
+            // }
             synchronized (sentPackets) {
                 sentPackets.values().forEach(p -> {
                     // System.out.printf(" [rtx] retransmitting %d\n", p.sequenceNumber);
@@ -135,6 +135,7 @@ public class RetransmitChannel extends Channel {
 
     public void cleanup() {
         running = false;
+        rtxThread.interrupt();
         try {
             rtxThread.join();
         } catch (InterruptedException e) {

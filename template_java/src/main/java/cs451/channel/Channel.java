@@ -1,6 +1,7 @@
 package cs451.channel;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.function.Consumer;
 
 /**
@@ -25,6 +26,12 @@ public abstract class Channel implements Closeable {
     }
 
     public void cleanup() {
+        try {
+            close();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     private Consumer<byte[]> consumer;

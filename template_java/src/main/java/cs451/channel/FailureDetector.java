@@ -18,7 +18,7 @@ public class FailureDetector implements Closeable {
 
     private final Map<Integer, Integer> lastTimeSeen = new HashMap<>();
 
-    private final int currentIteration = 0;
+    private int currentIteration = 0;
     private final Runnable sendPing;
     private final Consumer<Integer> onCrash;
 
@@ -42,18 +42,22 @@ public class FailureDetector implements Closeable {
 
     public void runner() {
         try {
-            while (true) {
+            while (!Thread.interrupted()) {
+                currentIteration++;
                 sendPing.run();
+                System.out.println("pinging " + currentIteration);
 
                 Set<Entry<Integer, Integer>> procs;
                 synchronized (lastTimeSeen) {
-                    procs = lastTimeSeen.entrySet();
-                }
+                    procs = new HashSet<>(lastTimeSeen.entrySet());
 
-                for (var kvp : procs) {
-                    if (kvp.getValue() < currentIteration - MAX_TIMEOUT) {
-                        onCrash.accept(kvp.getKey());
-                        lastTimeSeen.remove(kvp.getKey());
+                    for (var kvp : procs) {
+                        if (kvp.getValue() < currentIteration - MAX_TIMEOUT) {
+                            onCrash.accept(kvp.getKey());
+                            System.out.println(kvp.getKey() + " died. f.");
+                            System.out.flush();
+                            lastTimeSeen.remove(kvp.getKey());
+                        }
                     }
                 }
 
@@ -70,12 +74,13 @@ public class FailureDetector implements Closeable {
         this.pingThread.stop();
     }
 
-    public void cleanup() throws IOException {
-        this.pingThread.interrupt();
-        try {
-            this.pingThread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    public void cleanup() {
+        // this.pingThread.interrupt();
+        // try {
+        // this.pingThread.join();
+        // } catch (InterruptedException e) {
+        // e.printStackTrace();
+        // }
+        this.pingThread.stop();
     }
 }

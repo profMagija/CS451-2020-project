@@ -39,7 +39,7 @@ public class UniformReliableBroadcast extends Channel {
     }
 
     @Override
-    public void send(byte[] data) {
+    public synchronized void send(byte[] data) {
         final var curSeq = seqNum++;
         forward.put(new Pair<>(this.myId, curSeq), data);
         this.beb.send(ChannelUtils.writer().writeByte(PKT_TYPE_DATA).writeInt(myId).writeInt(myId).writeInt(curSeq)
@@ -55,7 +55,7 @@ public class UniformReliableBroadcast extends Channel {
         this.beb.send(ChannelUtils.writer().writeByte(PKT_TYPE_PING).writeInt(myId).done());
     }
 
-    private void onCrash(Integer process) {
+    private synchronized void onCrash(Integer process) {
         correct.remove(process);
 
         for (var kvp : forward.entrySet()) {
@@ -63,7 +63,7 @@ public class UniformReliableBroadcast extends Channel {
         }
     }
 
-    private void doReceive(byte[] data) {
+    private synchronized void doReceive(byte[] data) {
         final var reader = ChannelUtils.reader(data);
         final var packetType = reader.readByte();
         final var sender = reader.readInt();
@@ -116,4 +116,9 @@ public class UniformReliableBroadcast extends Channel {
         this.deliver(payload);
     }
 
+    @Override
+    public void cleanup() {
+        fd.cleanup();
+        beb.cleanup();
+    }
 }

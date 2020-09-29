@@ -35,4 +35,11 @@ public class BestEffortBroadcast extends Channel {
     private void doReceive(byte[] data) {
         deliver(data);
     }
+
+    @Override
+    public void cleanup() {
+        for (var pair : peers) {
+            pair.getValue().cleanup();
+        }
+    }
 }

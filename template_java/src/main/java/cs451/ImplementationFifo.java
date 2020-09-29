@@ -55,6 +55,8 @@ public class ImplementationFifo implements Implementation {
                 }
             }
         });
+
+        host.startHost();
     }
 
     public void run() throws Exception {

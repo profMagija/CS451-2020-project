@@ -41,6 +41,7 @@ public class Coordinator {
             System.out.println("Accessing barrier...");
             int character;
             while ((character = reader.read()) != -1) {
+                Thread.yield();
             }
         } catch (IOException ex) {
             System.out.println("I/O error: " + ex.getMessage());

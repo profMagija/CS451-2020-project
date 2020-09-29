@@ -24,7 +24,9 @@ public class UdpHost {
         } catch (SocketException | UnknownHostException e) {
             throw new RuntimeException(e);
         }
+    }
 
+    public void startHost() {
         recvThread = new Thread(this::recv, "UDP receive thread");
         // recvThread.setDaemon(true);
         recvThread.start();
