@@ -435,7 +435,7 @@ def main(processes, messages, runscript, broadcastType, logsDir, testConfig):
 
     # Start the finish signal
     finishSignal = finishedSignal.FinishedSignal(
-        SIGNAL_IP, SIGNAL_PORT, processes)
+        SIGNAL_IP, SIGNAL_PORT, processes, print)
     finishSignal.listen()
     finishSignalThread = threading.Thread(target=finishSignal.wait)
     finishSignalThread.start()

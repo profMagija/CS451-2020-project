@@ -7,6 +7,7 @@ import struct
 import selectors
 from collections import OrderedDict
 
+
 class FinishedSignal:
     def __init__(self, host, port, waitFor, printer=None):
         self.host = host
@@ -16,6 +17,7 @@ class FinishedSignal:
         self.connections = dict()
         self.endTimes = dict()
         self.sel = selectors.DefaultSelector()
+        self.portmap = {}
 
     def listen(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -54,13 +56,16 @@ class FinishedSignal:
             if self.printer:
                 host, port = conn.getpeername()
                 addr = '{}:{}'.format(host, port)
-                self.printer("Connection from {}, corresponds to PID {}".format(addr, pid))
+                self.portmap[port] = pid
+                self.printer(
+                    "Connection from {}, corresponds to PID {}".format(addr, pid))
         else:
+            self.printer("PID {} finished".format(
+                self.portmap[conn.getpeername()[1]]))
             self.connections[conn].append(int(time.time() * 1000))
             self.sel.unregister(conn)
             conn.close()
             self.waitFor -= 1
-
 
 
 if __name__ == "__main__":
@@ -92,11 +97,14 @@ if __name__ == "__main__":
 
     results = parser.parse_args()
 
-    signal = FinishedSignal(results.host, results.port, results.processes, print)
+    signal = FinishedSignal(results.host, results.port,
+                            results.processes, print)
     signal.listen()
-    print("Finish signal listens on {}:{} and waits for {} processes".format(results.host, results.port, results.processes))
+    print("Finish signal listens on {}:{} and waits for {} processes".format(
+        results.host, results.port, results.processes))
 
     signal.wait()
 
     for pid, endTs in OrderedDict(sorted(signal.endTimestamps().items())).items():
-        print("Process {} finished broadcasting at time {} ms from Unix epoch ".format(pid, endTs))
+        print("Process {} finished broadcasting at time {} ms from Unix epoch ".format(
+            pid, endTs))
